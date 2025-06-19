@@ -39,6 +39,11 @@ dependencies:
   shared_preferences: ^2.3.3
   wheel_picker: ^0.2.1
   flutter_regex: ^0.0.3
+  fluttertoast: ^8.2.12
+  flutter_screenutil: ^5.9.3
+  remove_emoji_input_formatter: ^0.0.1+1
+  dio: ^5.8.0+1
+  flutter_easyloading: ^3.0.5
 
 dev_dependencies:
   flutter_test:

@@ -1,5 +1,8 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:remove_emoji_input_formatter/remove_emoji_input_formatter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:test_fox/login.dart';
 import 'package:test_fox/utils.dart';
@@ -13,7 +16,7 @@ class SignUp extends StatefulWidget {
 
 class _SignUpState extends State<SignUp> {
   DateTime? _selectedDate;
-  final List<String> _items = ['Men', 'Women'];
+  final List<String> _items = ['Men', 'Women', 'Not specified'];
   int _selectedIndex = -1;
   // ignore: unused_field
   bool _genderSelected = false;
@@ -28,11 +31,16 @@ class _SignUpState extends State<SignUp> {
   String _confirmPasswordMessage = '';
   final TextEditingController _nameSurnameController = TextEditingController();
   String _nameSurnameMessage = '';
+  final TextEditingController _surnameController = TextEditingController();
+  String _surnameMessage = '';
   final TextEditingController _telephoneController = TextEditingController();
   String _telephoneMessage = '';
   final TextEditingController _addressController = TextEditingController();
+
   String _addressMessage = '';
   String verifyMessage = '';
+  bool obscure = true;
+  bool confirmobscure = true;
 
   void _signVerify(
       String inputUsername,
@@ -40,6 +48,7 @@ class _SignUpState extends State<SignUp> {
       String inputpassword,
       String inputcomfirmpassword,
       String inputname,
+      String inputsurname,
       String inputAddress,
       String inputtelephone,
       DateTime? inputdate,
@@ -49,6 +58,7 @@ class _SignUpState extends State<SignUp> {
         inputpassword.isEmpty ||
         inputcomfirmpassword.isEmpty ||
         inputname.isEmpty ||
+        inputsurname.isEmpty ||
         inputtelephone.isEmpty ||
         inputAddress.isEmpty ||
         inputdate == null ||
@@ -58,10 +68,11 @@ class _SignUpState extends State<SignUp> {
         _passwordMessage.isNotEmpty ||
         _confirmPasswordMessage.isNotEmpty ||
         _nameSurnameMessage.isNotEmpty ||
+        _surnameMessage.isNotEmpty ||
         _telephoneMessage.isNotEmpty ||
         _addressMessage.isNotEmpty) {
       setState(() {
-        verifyMessage = '❌ Please fill all fields correctly';
+        verifyMessage = ' Please fill all fields correctly';
       });
     } else
       SharedPreferences.getInstance().then((prefs) {
@@ -78,14 +89,14 @@ class _SignUpState extends State<SignUp> {
                       Text(
                         "Success",
                         style: TextStyle(
-                            fontSize: 25, fontWeight: FontWeight.bold),
+                            fontSize: 25.sp, fontWeight: FontWeight.bold),
                       ),
                     ],
                   ),
                 ),
                 content: Text(
                   "You have successfully signed up!",
-                  style: TextStyle(fontSize: 12),
+                  style: TextStyle(fontSize: 12.sp),
                   textAlign: TextAlign.center,
                 ),
                 actions: [
@@ -109,14 +120,16 @@ class _SignUpState extends State<SignUp> {
   void _validateUsername(String value) {
     final isValid = Utils().isValidUsername(value.trim());
     setState(() {
-      _message = isValid ? '' : '❌ Needs to be at least 5 characters long';
+      _message = isValid
+          ? ''
+          : ' Needs to be at least 5 characters long and contain no spaces or emojis';
     });
   }
 
   void _validateEmail(String value) {
     final isValid = Utils().isValidEmail(value.trim());
     setState(() {
-      _emailMessage = isValid ? '' : '❌ Invalid email format';
+      _emailMessage = isValid ? '' : ' Invalid email format';
     });
   }
 
@@ -125,7 +138,7 @@ class _SignUpState extends State<SignUp> {
     setState(() {
       _passwordMessage = isValid
           ? ''
-          : '❌ Needs to be at least 8 characters long and contain letters and numbers';
+          : ' Needs to be at least 6 characters long and contain letters and numbers';
     });
   }
 
@@ -133,15 +146,25 @@ class _SignUpState extends State<SignUp> {
     setState(() {
       value == _passwordController.text
           ? _confirmPasswordMessage = ''
-          : _confirmPasswordMessage = '❌ Passwords do not match';
+          : _confirmPasswordMessage = ' Passwords do not match';
     });
   }
 
   void _nameSurname(String value) {
     final isValid = Utils().isValidName(value.trim());
     setState(() {
-      _nameSurnameMessage =
-          isValid ? '' : '❌ Needs to be at least 1 characters long';
+      _nameSurnameMessage = isValid
+          ? ''
+          : ' Needs to be at least 1 characters long and contain no spaces or emojis';
+    });
+  }
+
+  void _surname(String value) {
+    final isValid = Utils().isValidSurname(value.trim());
+    setState(() {
+      _surnameMessage = isValid
+          ? ''
+          : ' Needs to be at least 1 characters long and contain no spaces or emojis';
     });
   }
 
@@ -149,15 +172,16 @@ class _SignUpState extends State<SignUp> {
     final isValid = Utils().istelephoneNumber(value.trim());
     setState(() {
       _telephoneMessage =
-          isValid ? '' : '❌ Needs to be only 10 numbers long and start with 0';
+          isValid ? '' : ' Needs to be only 10 numbers long and start with 0';
     });
   }
 
   void _validateAddress(String value) {
     final isValid = Utils().isValidAddress(value.trim());
     setState(() {
-      _addressMessage =
-          isValid ? '' : '❌ Needs to be at least 1 characters long';
+      _addressMessage = isValid
+          ? ''
+          : ' Needs to be at least 1 characters long and contain no emojis';
     });
   }
 
@@ -166,7 +190,7 @@ class _SignUpState extends State<SignUp> {
       context: context,
       initialDate: _selectedDate ?? DateTime.now(),
       firstDate: DateTime(2000),
-      lastDate: DateTime(2101),
+      lastDate: DateTime.now(),
     );
     if (picked != null && picked != _selectedDate) {
       setState(() {
@@ -180,12 +204,12 @@ class _SignUpState extends State<SignUp> {
       context: context,
       builder: (_) {
         return Container(
-          height: 250,
+          height: 250.h,
           child: Column(
             children: [
               Expanded(
                 child: SizedBox(
-                  height: 200,
+                  height: 200.h,
                   child: CupertinoPicker(
                     itemExtent: 40,
                     backgroundColor: Colors.white,
@@ -230,21 +254,36 @@ class _SignUpState extends State<SignUp> {
                   children: [
                     Text(
                       "Sign Up",
-                      style:
-                          TextStyle(fontSize: 40, fontWeight: FontWeight.bold),
+                      style: TextStyle(
+                          fontSize: 40.h, fontWeight: FontWeight.bold),
                     ),
                     Text("Create a new account"),
                   ],
                 )),
+              ),
+              Align(
+                alignment: Alignment.centerLeft,
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 40),
+                  child: Text(
+                    "Username",
+                    style: TextStyle(fontSize: 13.h),
+                  ),
+                ),
               ),
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 40),
                 child: SizedBox(
                   width: double.infinity,
                   child: TextField(
+                    inputFormatters: [
+                      RemoveEmojiInputFormatter(),
+                      FilteringTextInputFormatter.allow(
+                        RegExp(r'[a-zA-Z0-9]'),
+                      ),
+                    ],
                     controller: _textEditingController,
                     decoration: InputDecoration(
-                      labelText: "Username",
                       prefixIcon: Icon(Icons.person),
                       filled: true,
                       fillColor: Color.fromARGB(255, 239, 225, 241),
@@ -257,27 +296,46 @@ class _SignUpState extends State<SignUp> {
                   ),
                 ),
               ),
-              SizedBox(height: 10),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 40),
-                child: Text(
-                  _message,
-                  style: TextStyle(
-                    fontSize: 16,
-                    color: _message.contains('❌') ? Colors.red : null,
+              SizedBox(height: 10.h),
+              Align(
+                alignment: Alignment.centerLeft,
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 40),
+                  child: Text(
+                    _message,
+                    style: TextStyle(fontSize: 16.sp, color: Colors.red),
                   ),
                 ),
               ),
-              SizedBox(height: 10),
+              SizedBox(height: 10.h),
+              Column(
+                children: [
+                  Align(
+                    alignment: Alignment.centerLeft,
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 40),
+                      child: Text(
+                        "Email",
+                        style: TextStyle(fontSize: 13.sp),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 40),
                 child: SizedBox(
                   width: double.infinity,
                   child: TextField(
+                    inputFormatters: [
+                      RemoveEmojiInputFormatter(),
+                      FilteringTextInputFormatter.allow(
+                        RegExp(r'[a-zA-Z0-9@.]'),
+                      ),
+                    ],
                     controller: _emailController,
                     onChanged: _validateEmail,
                     decoration: InputDecoration(
-                      labelText: "Email",
                       prefixIcon: Icon(Icons.email),
                       filled: true,
                       fillColor: const Color.fromARGB(255, 239, 225, 241),
@@ -289,60 +347,116 @@ class _SignUpState extends State<SignUp> {
                   ),
                 ),
               ),
-              SizedBox(height: 10),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 40),
-                child: Text(
-                  _emailMessage,
-                  style: TextStyle(
-                    fontSize: 16,
-                    color: _emailMessage.contains('❌') ? Colors.red : null,
+              SizedBox(height: 10.h),
+              Align(
+                alignment: Alignment.centerLeft,
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 40),
+                  child: Text(
+                    _emailMessage,
+                    style: TextStyle(fontSize: 16.sp, color: Colors.red),
                   ),
                 ),
               ),
-              SizedBox(height: 10),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 40),
-                child: SizedBox(
-                  width: double.infinity,
-                  child: TextField(
-                    controller: _passwordController,
-                    onChanged: _validatePassword,
-                    decoration: InputDecoration(
-                      labelText: "Password",
-                      prefixIcon: Icon(Icons.password_sharp),
-                      filled: true,
-                      fillColor: const Color.fromARGB(255, 239, 225, 241),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(20),
-                        borderSide: BorderSide.none,
+              SizedBox(height: 10.h),
+              Column(
+                children: [
+                  Align(
+                    alignment: Alignment.centerLeft,
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 40),
+                      child: Text(
+                        "Password",
+                        style: TextStyle(fontSize: 13.sp),
                       ),
                     ),
                   ),
-                ),
+                ],
               ),
-              SizedBox(height: 10),
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 40),
-                child: Text(
-                  _passwordMessage,
-                  style: TextStyle(
-                    fontSize: 16,
-                    color: _passwordMessage.contains('❌') ? Colors.red : null,
+                child: SizedBox(
+                    width: double.infinity,
+                    child: TextField(
+                      inputFormatters: [
+                        RemoveEmojiInputFormatter(),
+                        FilteringTextInputFormatter.allow(
+                          RegExp(r'[a-zA-Z0-9]'),
+                        ),
+                      ],
+                      obscureText: obscure,
+                      controller: _passwordController,
+                      onChanged: _validatePassword,
+                      decoration: InputDecoration(
+                        prefixIcon: Icon(Icons.password_sharp),
+                        suffixIcon: IconButton(
+                            icon: Icon(obscure
+                                ? Icons.visibility_off
+                                : Icons.visibility),
+                            onPressed: () {
+                              setState(() {
+                                obscure = !obscure;
+                              });
+                            }),
+                        filled: true,
+                        fillColor: const Color.fromARGB(255, 239, 225, 241),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(20),
+                          borderSide: BorderSide.none,
+                        ),
+                      ),
+                    )),
+              ),
+              SizedBox(height: 10.h),
+              Align(
+                alignment: Alignment.centerLeft,
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 40),
+                  child: Text(
+                    _passwordMessage,
+                    style: TextStyle(fontSize: 16.sp, color: Colors.red),
                   ),
                 ),
               ),
-              SizedBox(height: 10),
+              Column(
+                children: [
+                  Align(
+                    alignment: Alignment.centerLeft,
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 40),
+                      child: Text(
+                        "Confirm Password",
+                        style: TextStyle(fontSize: 13.sp),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 40),
                 child: SizedBox(
                   width: double.infinity,
                   child: TextField(
+                    inputFormatters: [
+                      RemoveEmojiInputFormatter(),
+                      FilteringTextInputFormatter.allow(
+                        RegExp(r'[a-zA-Z0-9]'),
+                      ),
+                    ],
+                    obscureText: confirmobscure,
                     controller: _confirmPasswordController,
                     onChanged: _confirmPassword,
                     decoration: InputDecoration(
-                      labelText: "Confirm Password",
                       prefixIcon: Icon(Icons.password_sharp),
+                      suffixIcon: IconButton(
+                          icon: Icon(confirmobscure
+                              ? Icons.visibility_off
+                              : Icons.visibility),
+                          onPressed: () {
+                            setState(() {
+                              confirmobscure = !confirmobscure;
+                            });
+                          }),
                       filled: true,
                       fillColor: const Color.fromARGB(255, 239, 225, 241),
                       border: OutlineInputBorder(
@@ -353,29 +467,46 @@ class _SignUpState extends State<SignUp> {
                   ),
                 ),
               ),
-              SizedBox(height: 10),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 40),
-                child: Text(
-                  _confirmPasswordMessage,
-                  style: TextStyle(
-                    fontSize: 16,
-                    color: _confirmPasswordMessage.contains('❌')
-                        ? Colors.red
-                        : null,
+              SizedBox(height: 10.h),
+              Align(
+                alignment: Alignment.centerLeft,
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 40),
+                  child: Text(
+                    _confirmPasswordMessage,
+                    style: TextStyle(fontSize: 16.sp, color: Colors.red),
                   ),
                 ),
               ),
-              SizedBox(height: 10),
+              SizedBox(height: 10.h),
+              Column(
+                children: [
+                  Align(
+                    alignment: Alignment.centerLeft,
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 40),
+                      child: Text(
+                        "Name",
+                        style: TextStyle(fontSize: 13.sp),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 40),
                 child: SizedBox(
                   width: double.infinity,
                   child: TextField(
+                    inputFormatters: [
+                      RemoveEmojiInputFormatter(),
+                      FilteringTextInputFormatter.allow(
+                        RegExp(r'[a-zA-Z0-9]'),
+                      ),
+                    ],
                     controller: _nameSurnameController,
                     onChanged: _nameSurname,
                     decoration: InputDecoration(
-                      labelText: "Name - Surname",
                       prefixIcon: Icon(Icons.abc),
                       filled: true,
                       fillColor: const Color.fromARGB(255, 239, 225, 241),
@@ -387,23 +518,70 @@ class _SignUpState extends State<SignUp> {
                   ),
                 ),
               ),
-              SizedBox(height: 10),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 40),
-                child: Text(
-                  _nameSurnameMessage,
-                  style: TextStyle(
-                    fontSize: 16,
-                    color:
-                        _nameSurnameMessage.contains('❌') ? Colors.red : null,
+              SizedBox(height: 10.h),
+              Align(
+                alignment: Alignment.centerLeft,
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 40),
+                  child: Text(
+                    _nameSurnameMessage,
+                    style: TextStyle(fontSize: 16.sp, color: Colors.red),
                   ),
                 ),
               ),
-              SizedBox(height: 10),
+              SizedBox(height: 10.h),
+              Column(
+                children: [
+                  Align(
+                    alignment: Alignment.centerLeft,
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 40),
+                      child: Text(
+                        "Surname",
+                        style: TextStyle(fontSize: 13.sp),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 40),
                 child: SizedBox(
-                  height: 55,
+                  width: double.infinity,
+                  child: TextField(
+                    controller: _surnameController,
+                    onChanged: _surname,
+                    inputFormatters: [
+                      RemoveEmojiInputFormatter(),
+                      FilteringTextInputFormatter.allow(
+                        RegExp(r'[a-zA-Z0-9]'),
+                      ),
+                    ],
+                    decoration: InputDecoration(
+                      prefixIcon: Icon(Icons.abc),
+                      filled: true,
+                      fillColor: const Color.fromARGB(255, 239, 225, 241),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(20),
+                        borderSide: BorderSide.none,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+              SizedBox(height: 20.h),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 40),
+                child: Text(
+                  _surnameMessage,
+                  style: TextStyle(fontSize: 16.sp, color: Colors.red),
+                ),
+              ),
+              SizedBox(height: 10.h),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 40),
+                child: SizedBox(
+                  height: 55.h,
                   width: double.infinity,
                   child: ElevatedButton(
                     onPressed: () => _selectDate(context),
@@ -416,7 +594,7 @@ class _SignUpState extends State<SignUp> {
                     child: Row(
                       children: [
                         Icon(Icons.calendar_today),
-                        SizedBox(width: 10),
+                        SizedBox(width: 10.w),
                         Text(_selectedDate != null
                             ? "${_selectedDate!.toLocal().toString().split(' ')[0]}"
                             : 'Birth Date')
@@ -425,11 +603,11 @@ class _SignUpState extends State<SignUp> {
                   ),
                 ),
               ),
-              const SizedBox(height: 40),
+              SizedBox(height: 60.h),
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 40),
                 child: SizedBox(
-                  height: 55,
+                  height: 55.h,
                   width: double.infinity,
                   child: ElevatedButton(
                     onPressed: () => _showCupertinoPicker(context),
@@ -445,7 +623,7 @@ class _SignUpState extends State<SignUp> {
                         // Align(
                         //     alignment: Alignment.centerLeft,
                         //     child: Text('   Gender')),
-                        SizedBox(width: 10),
+                        SizedBox(width: 10.w),
                         Text(_selectedIndex >= 0
                             ? _items[_selectedIndex]
                             : 'Gender')
@@ -454,16 +632,36 @@ class _SignUpState extends State<SignUp> {
                   ),
                 ),
               ),
-              SizedBox(height: 40),
+              SizedBox(height: 40.h),
+              Column(
+                children: [
+                  Align(
+                    alignment: Alignment.centerLeft,
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 40),
+                      child: Text(
+                        "Telephone",
+                        style: TextStyle(fontSize: 13.sp),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 40),
                 child: SizedBox(
                   width: double.infinity,
                   child: TextField(
+                    keyboardType: TextInputType.number,
+                    maxLength: 10,
+                    inputFormatters: [
+                      RemoveEmojiInputFormatter(),
+                      FilteringTextInputFormatter.digitsOnly,
+                      LengthLimitingTextInputFormatter(10),
+                    ],
                     controller: _telephoneController,
                     onChanged: _validateTelephone,
                     decoration: InputDecoration(
-                      labelText: "Telephone",
                       prefixIcon: Icon(Icons.phone),
                       filled: true,
                       fillColor: const Color.fromARGB(255, 239, 225, 241),
@@ -475,27 +673,42 @@ class _SignUpState extends State<SignUp> {
                   ),
                 ),
               ),
-              SizedBox(height: 10),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 40),
-                child: Text(
-                  _telephoneMessage,
-                  style: TextStyle(
-                    fontSize: 16,
-                    color: _telephoneMessage.contains('❌') ? Colors.red : null,
+              SizedBox(height: 10.h),
+              Align(
+                alignment: Alignment.centerLeft,
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 40),
+                  child: Text(
+                    _telephoneMessage,
+                    style: TextStyle(fontSize: 16.sp, color: Colors.red),
                   ),
                 ),
               ),
-              SizedBox(height: 10),
+              SizedBox(height: 10.h),
+              Align(
+                alignment: Alignment.centerLeft,
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 40),
+                  child: Text(
+                    "Address",
+                    style: TextStyle(fontSize: 13.sp),
+                  ),
+                ),
+              ),
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 40),
                 child: SizedBox(
                   width: double.infinity,
                   child: TextField(
+                    inputFormatters: [
+                      RemoveEmojiInputFormatter(),
+                      FilteringTextInputFormatter.allow(
+                        RegExp(r'[a-zA-Z0-9]'),
+                      ),
+                    ],
                     controller: _addressController,
                     onChanged: _validateAddress,
                     decoration: InputDecoration(
-                      labelText: "Address",
                       prefixIcon: Icon(Icons.home),
                       filled: true,
                       fillColor: const Color.fromARGB(255, 239, 225, 241),
@@ -507,18 +720,18 @@ class _SignUpState extends State<SignUp> {
                   ),
                 ),
               ),
-              SizedBox(height: 10),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 40),
-                child: Text(
-                  _addressMessage,
-                  style: TextStyle(
-                    fontSize: 16,
-                    color: _addressMessage.contains('❌') ? Colors.red : null,
+              SizedBox(height: 10.h),
+              Align(
+                alignment: Alignment.centerLeft,
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 40),
+                  child: Text(
+                    _addressMessage,
+                    style: TextStyle(fontSize: 16.sp, color: Colors.red),
                   ),
                 ),
               ),
-              SizedBox(height: 40),
+              SizedBox(height: 40.h),
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 40),
                 child: SizedBox(
@@ -531,6 +744,7 @@ class _SignUpState extends State<SignUp> {
                           _passwordController.text,
                           _confirmPasswordController.text,
                           _nameSurnameController.text,
+                          _surnameController.text,
                           _telephoneController.text,
                           _addressController.text,
                           _selectedDate,
@@ -577,18 +791,18 @@ class _SignUpState extends State<SignUp> {
                       ),
                     )),
               ),
-              SizedBox(height: 10),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 40),
-                child: Text(
-                  verifyMessage,
-                  style: TextStyle(
-                    fontSize: 16,
-                    color: verifyMessage.contains('❌') ? Colors.red : null,
+              SizedBox(height: 10.h),
+              Align(
+                alignment: Alignment.centerLeft,
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 40),
+                  child: Text(
+                    verifyMessage,
+                    style: TextStyle(fontSize: 16.sp, color: Colors.red),
                   ),
                 ),
               ),
-              SizedBox(height: 20),
+              SizedBox(height: 20.h),
               TextButton(
                 onPressed: () {
                   Navigator.push(
