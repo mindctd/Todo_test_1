@@ -4,10 +4,14 @@ import 'package:test_fox/model/post_model.dart';
 class ApiService {
   final Dio dio = Dio();
 
- Future<List<Posts>> fetchPosts() async {
+  Future<List<Posts>> fetchPosts() async {
     try {
       final response =
-          await dio.get("https://jsonplaceholder.typicode.com/posts");
+          await dio.get("https://jsonplaceholder.typicode.com/posts",
+              options: Options(headers: {
+                'Accept': 'application/json',
+              }));
+
       if (response.statusCode == 200) {
         return (response.data as List)
             .map((json) => Posts.fromJson(json))
@@ -20,5 +24,4 @@ class ApiService {
       throw Exception('Failed to load Posts');
     }
   }
-  }
-
+}
